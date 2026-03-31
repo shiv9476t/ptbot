@@ -1,0 +1,7 @@
+anthropic
+chromadb
+flask
+flask-cors
+gunicorn
+python-dotenv
+requests
