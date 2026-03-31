@@ -34,7 +34,7 @@ def run_agent(pt, sender_id, message_text):
         knowledge_chunks=knowledge_chunks
     )
 
-    # Step 7 - call the Anthropic API
+    # Step 7 - call the Anthropic API -
     response = client.messages.create(
         model='claude-sonnet-4-20250514',
         max_tokens=1000,
