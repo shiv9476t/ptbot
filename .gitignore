@@ -1,5 +1,4 @@
 .env
-ptbot.db
 pt_docs/
 __pycache__/
 *.pyc
