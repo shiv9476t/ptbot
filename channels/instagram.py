@@ -58,4 +58,10 @@ def send_reply(sender_id, reply_text, instagram_token):
     }
 
     response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code != 200:
+        print(f"Instagram send error: {response.status_code} {response.text}")
+    else:
+        print(f"Instagram reply sent successfully to {sender_id}")
+    
     return response.status_code
