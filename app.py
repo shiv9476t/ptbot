@@ -44,8 +44,6 @@ def instagram_webhook():
         sender_id=parsed['sender_id'],
         message_text=parsed['message_text']
     )
-    
-    
 
     send_reply(
         sender_id=parsed['sender_id'],
@@ -54,6 +52,10 @@ def instagram_webhook():
     )
 
     return 'OK', 200
+
+@app.route('/auth/callback', methods=['GET'])
+def auth_callback():
+    return 'Connected successfully!', 200
 
 if __name__ == '__main__':
     app.run(debug=True)
