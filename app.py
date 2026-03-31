@@ -27,6 +27,8 @@ def instagram_webhook():
         return 'OK', 200
 
     parsed = parse_message(payload)
+    if parsed:
+        print(f"sender_id: {parsed['sender_id']}, recipient_id: {parsed['recipient_id']}")
     if not parsed:
         return 'OK', 200
 
@@ -42,6 +44,8 @@ def instagram_webhook():
         sender_id=parsed['sender_id'],
         message_text=parsed['message_text']
     )
+    
+    
 
     send_reply(
         sender_id=parsed['sender_id'],
