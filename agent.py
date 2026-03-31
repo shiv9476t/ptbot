@@ -33,6 +33,7 @@ def run_agent(pt, sender_id, message_text):
         is_new=is_new,
         knowledge_chunks=knowledge_chunks
     )
+    print(f"Tone config: {pt['tone_config'][:100]}")
 
     # Step 7 - call the Anthropic API -
     response = client.messages.create(
