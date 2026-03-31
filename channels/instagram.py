@@ -45,7 +45,7 @@ def send_reply(sender_id, reply_text, instagram_token):
 #    typing_delay = min(words * 0.3, 15)
 #    time.sleep(base_delay + typing_delay)
 
-    url = "https://graph.facebook.com/v18.0/me/messages"
+    url = "https://graph.instagram.com/v21.0/me/messages"
 
     headers = {
         'Authorization': f'Bearer {instagram_token}',
