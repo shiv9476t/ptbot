@@ -3,31 +3,19 @@ import hmac
 import requests
 import time
 import random
-from config import INSTAGRAM_VERIFY_TOKEN, META_APP_SECRET, META_INSTAGRAM_APP_SECRET
-
-def _hmac_hex(secret, body):
-    return hmac.new(secret.strip().encode(), body, hashlib.sha256).hexdigest()
+from config import INSTAGRAM_VERIFY_TOKEN, META_INSTAGRAM_APP_SECRET
 
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature-256', '')
     if not signature.startswith('sha256='):
-        print(f"[sig] missing or malformed header: '{signature}'")
         return False
     raw_body = request.get_data()
-    received = signature[7:]
-
-    if META_INSTAGRAM_APP_SECRET:
-        candidates = [('META_APP_SECRET', META_APP_SECRET), ('META_INSTAGRAM_APP_SECRET', META_INSTAGRAM_APP_SECRET)]
-    else:
-        candidates = [('META_APP_SECRET', META_APP_SECRET)]
-
-    for name, secret in candidates:
-        if hmac.compare_digest(received, _hmac_hex(secret, raw_body)):
-            print(f"[sig] matched with {name}")
-            return True
-
-    print(f"[sig] no match — received={received[:16]}...")
-    return False
+    expected = hmac.new(
+        META_INSTAGRAM_APP_SECRET.strip().encode(),
+        raw_body,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(signature[7:], expected)
 
 def verify_webhook(request):
     mode = request.args.get('hub.mode')
