@@ -8,13 +8,20 @@ from config import INSTAGRAM_VERIFY_TOKEN, META_APP_SECRET
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature-256', '')
     if not signature.startswith('sha256='):
+        print(f"[sig] missing or malformed header: '{signature}'")
         return False
+    raw_body = request.get_data()
+    secret = META_APP_SECRET.strip()
     expected = hmac.new(
-        META_APP_SECRET.encode(),
-        request.get_data(),
+        secret.encode(),
+        raw_body,
         hashlib.sha256
     ).hexdigest()
-    return hmac.compare_digest(signature[7:], expected)
+    received = signature[7:]
+    match = hmac.compare_digest(received, expected)
+    if not match:
+        print(f"[sig] mismatch — received={received[:16]}... expected={expected[:16]}... body_len={len(raw_body)} secret_len={len(secret)}")
+    return match
 
 def verify_webhook(request):
     mode = request.args.get('hub.mode')
