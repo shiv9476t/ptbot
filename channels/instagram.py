@@ -1,7 +1,20 @@
+import hashlib
+import hmac
 import requests
 import time
 import random
-from config import INSTAGRAM_VERIFY_TOKEN
+from config import INSTAGRAM_VERIFY_TOKEN, META_APP_SECRET
+
+def verify_signature(request):
+    signature = request.headers.get('X-Hub-Signature-256', '')
+    if not signature.startswith('sha256='):
+        return False
+    expected = hmac.new(
+        META_APP_SECRET.encode(),
+        request.get_data(),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(signature[7:], expected)
 
 def verify_webhook(request):
     mode = request.args.get('hub.mode')

@@ -8,3 +8,6 @@ ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
 # One-time webhook verification with Meta
 INSTAGRAM_VERIFY_TOKEN = os.getenv('INSTAGRAM_VERIFY_TOKEN')
+
+# Used to verify X-Hub-Signature-256 on incoming webhook payloads
+META_APP_SECRET = os.getenv('META_APP_SECRET')

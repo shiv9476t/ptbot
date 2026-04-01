@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from agent import run_agent
 from database.db import init_db
 from database.pts import get_pt_by_instagram_id
-from channels.instagram import verify_webhook, parse_message, send_reply
+from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
 from config import INSTAGRAM_VERIFY_TOKEN
 
 app = Flask(__name__)
@@ -22,6 +22,9 @@ def instagram_verify():
 
 @app.route('/instagram', methods=['POST'])
 def instagram_webhook():
+    if not verify_signature(request):
+        return 'Forbidden', 403
+
     payload = request.get_json()
     if not payload:
         return 'OK', 200

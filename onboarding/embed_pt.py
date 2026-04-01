@@ -23,6 +23,11 @@ def embed_pt_documents(pt_collection_key, documents_folder):
     pt_collection_key should be the PT's instagram_account_id —
     must match what's used in knowledge.py and stored in the pts table.
     """
+    try:
+        client.delete_collection(name=pt_collection_key)
+        print(f"Deleted existing collection '{pt_collection_key}'")
+    except Exception:
+        pass
     collection = client.get_or_create_collection(name=pt_collection_key)
 
     embedded_count = 0
