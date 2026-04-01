@@ -11,3 +11,6 @@ INSTAGRAM_VERIFY_TOKEN = os.getenv('INSTAGRAM_VERIFY_TOKEN')
 
 # Used to verify X-Hub-Signature-256 on incoming webhook payloads (Instagram app secret)
 META_INSTAGRAM_APP_SECRET = os.getenv('META_INSTAGRAM_APP_SECRET')
+
+# Protects the /admin/* endpoints
+ADMIN_SECRET = os.getenv('ADMIN_SECRET')

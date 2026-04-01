@@ -3,7 +3,8 @@ from agent import run_agent
 from database.db import init_db
 from database.pts import get_pt_by_instagram_id
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
-from config import INSTAGRAM_VERIFY_TOKEN
+from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET
+from swap_demo_pt import swap
 
 app = Flask(__name__)
 
@@ -55,6 +56,19 @@ def instagram_webhook():
     )
 
     return 'OK', 200
+
+@app.route('/admin/swap', methods=['POST'])
+def admin_swap():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or 'pt_folder' not in body:
+        return jsonify({'error': 'pt_folder required'}), 400
+    try:
+        swap(body['pt_folder'])
+        return jsonify({'ok': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/auth/callback', methods=['GET'])
 def auth_callback():

@@ -67,14 +67,12 @@ def delete_chroma_collection(account_id):
 
 def insert_pt(conn, config, pt_folder):
     if not DEMO_INSTAGRAM_TOKEN:
-        print("Error: DEMO_INSTAGRAM_TOKEN environment variable is not set.")
-        sys.exit(1)
+        raise ValueError("DEMO_INSTAGRAM_TOKEN environment variable is not set.")
 
     required = {'name', 'tone_config', 'price_mode', 'calendly_link', 'handoff_number'}
     missing = required - config.keys()
     if missing:
-        print(f"Error: config.json is missing keys: {', '.join(missing)}")
-        sys.exit(1)
+        raise ValueError(f"config.json is missing keys: {', '.join(missing)}")
 
     conn.execute('''
         INSERT INTO pts (name, instagram_account_id, instagram_token, handoff_number,
@@ -122,20 +120,13 @@ def _chunk_text(text, chunk_size=500, overlap=50):
     return chunks
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python swap_demo_pt.py <pt_folder>")
-        sys.exit(1)
-
-    pt_folder = sys.argv[1]
+def swap(pt_folder):
     config_path = os.path.join(pt_folder, 'config.json')
 
     if not os.path.isdir(pt_folder):
-        print(f"Error: '{pt_folder}' is not a directory.")
-        sys.exit(1)
+        raise ValueError(f"'{pt_folder}' is not a directory.")
     if not os.path.exists(config_path):
-        print(f"Error: no config.json found in '{pt_folder}'.")
-        sys.exit(1)
+        raise ValueError(f"No config.json found in '{pt_folder}'.")
 
     with open(config_path, 'r') as f:
         config = json.load(f)
@@ -146,14 +137,18 @@ if __name__ == '__main__':
     try:
         delete_pt_and_data(conn, DEMO_ACCOUNT_ID)
         conn.commit()
-
         delete_chroma_collection(DEMO_ACCOUNT_ID)
-
         insert_pt(conn, config, pt_folder)
         conn.commit()
     finally:
         conn.close()
 
     embed_documents(DEMO_ACCOUNT_ID, pt_folder)
-
     print(f"\nDone. Demo PT is now '{config['name']}'.")
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print("Usage: python swap_demo_pt.py <pt_folder>")
+        sys.exit(1)
+    swap(sys.argv[1])
