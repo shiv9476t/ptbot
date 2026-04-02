@@ -2,7 +2,7 @@ import requests
 from flask import Flask, request, jsonify
 from agent import run_agent
 from database.db import init_db, get_db
-from database.pts import get_pt_by_instagram_id, get_all_pts
+from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt
 from database.contacts import get_all_contacts
 from database.conversations import get_messages_for_contact
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
@@ -97,6 +97,19 @@ def admin_db_messages():
     if not contact_id:
         return jsonify({'error': 'contact_id query param required'}), 400
     return jsonify(get_messages_for_contact(contact_id)), 200
+
+@app.route('/admin/pt/update', methods=['POST'])
+def admin_pt_update():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or 'instagram_account_id' not in body:
+        return jsonify({'error': 'instagram_account_id required'}), 400
+    instagram_account_id = body.pop('instagram_account_id')
+    updated = update_pt(instagram_account_id, body)
+    if updated is None:
+        return jsonify({'error': 'PT not found or no valid fields provided'}), 404
+    return jsonify(updated), 200
 
 @app.route('/admin/swap', methods=['POST'])
 def admin_swap():
