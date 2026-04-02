@@ -57,6 +57,23 @@ def instagram_webhook():
 
     return 'OK', 200
 
+@app.route('/admin/message', methods=['POST'])
+def admin_message():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or not all(k in body for k in ('instagram_account_id', 'sender_id', 'message')):
+        return jsonify({'error': 'instagram_account_id, sender_id, and message are required'}), 400
+    pt = get_pt_by_instagram_id(body['instagram_account_id'])
+    if not pt:
+        return jsonify({'error': 'PT not found'}), 404
+    reply = run_agent(
+        pt=dict(pt),
+        sender_id=body['sender_id'],
+        message_text=body['message']
+    )
+    return jsonify({'reply': reply}), 200
+
 @app.route('/admin/swap', methods=['POST'])
 def admin_swap():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
