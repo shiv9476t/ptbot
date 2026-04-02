@@ -14,3 +14,6 @@ META_INSTAGRAM_APP_SECRET = os.getenv('META_INSTAGRAM_APP_SECRET')
 
 # Protects the /admin/* endpoints
 ADMIN_SECRET = os.getenv('ADMIN_SECRET')
+
+# Instagram OAuth app credentials
+META_APP_ID = os.getenv('META_APP_ID')
