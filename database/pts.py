@@ -14,6 +14,12 @@ def get_pt_by_instagram_id(instagram_account_id):
     conn.close()
     return pt
 
+def get_all_pts():
+    conn = get_db()
+    pts = conn.execute('SELECT * FROM pts').fetchall()
+    conn.close()
+    return [dict(pt) for pt in pts]
+
 def get_pt_by_id(pt_id):
     conn = get_db()
     pt = conn.execute(

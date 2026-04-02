@@ -26,6 +26,16 @@ def get_conversation_history(contact_id, limit=20):
     conn.close()
     return [{'role': row['role'], 'content': row['content']} for row in reversed(messages)]
 
+def get_messages_for_contact(contact_id):
+    conn = get_db()
+    messages = conn.execute('''
+        SELECT id, role, content, created_at FROM messages
+        WHERE contact_id = ?
+        ORDER BY created_at ASC
+    ''', (contact_id,)).fetchall()
+    conn.close()
+    return [dict(m) for m in messages]
+
 def get_last_inbound_timestamp(contact_id):
     """
     Returns the timestamp of the most recent user message.

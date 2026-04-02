@@ -34,6 +34,12 @@ def get_or_create_contact(pt_id, sender_id, channel):
         contact_id = create_contact(pt_id, sender_id, channel)
         return contact_id, True
 
+def get_all_contacts():
+    conn = get_db()
+    contacts = conn.execute('SELECT * FROM contacts').fetchall()
+    conn.close()
+    return [dict(c) for c in contacts]
+
 def mark_handed_off(contact_id):
     conn = get_db()
     conn.execute(

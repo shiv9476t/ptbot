@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from agent import run_agent
 from database.db import init_db
-from database.pts import get_pt_by_instagram_id
+from database.pts import get_pt_by_instagram_id, get_all_pts
+from database.contacts import get_all_contacts
+from database.conversations import get_messages_for_contact
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
 from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET
 from swap_demo_pt import swap
@@ -73,6 +75,27 @@ def admin_message():
         message_text=body['message']
     )
     return jsonify({'reply': reply}), 200
+
+@app.route('/admin/db/pts', methods=['GET'])
+def admin_db_pts():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    return jsonify(get_all_pts()), 200
+
+@app.route('/admin/db/contacts', methods=['GET'])
+def admin_db_contacts():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    return jsonify(get_all_contacts()), 200
+
+@app.route('/admin/db/messages', methods=['GET'])
+def admin_db_messages():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    contact_id = request.args.get('contact_id')
+    if not contact_id:
+        return jsonify({'error': 'contact_id query param required'}), 400
+    return jsonify(get_messages_for_contact(contact_id)), 200
 
 @app.route('/admin/swap', methods=['POST'])
 def admin_swap():
