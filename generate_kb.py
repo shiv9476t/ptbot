@@ -14,6 +14,9 @@ from pathlib import Path
 
 import requests
 import anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ---------------------------------------------------------------------------
