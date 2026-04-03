@@ -53,6 +53,12 @@ def init_db():
         )
     ''')
 
+    # Add demo_slug column if it doesn't exist (safe migration)
+    try:
+        cursor.execute('ALTER TABLE pts ADD COLUMN demo_slug TEXT')
+    except Exception:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
     print("PTBot database initialised.")
