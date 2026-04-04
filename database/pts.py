@@ -29,8 +29,17 @@ def get_pt_by_id(pt_id):
     conn.close()
     return pt
 
+def get_pt_by_slug(slug):
+    conn = get_db()
+    pt = conn.execute(
+        'SELECT * FROM pts WHERE demo_slug = ?',
+        (slug,)
+    ).fetchone()
+    conn.close()
+    return pt
+
 def update_pt(instagram_account_id, fields):
-    allowed = {'name', 'tone_config', 'calendly_link', 'price_mode', 'handoff_number'}
+    allowed = {'name', 'tone_config', 'calendly_link', 'price_mode', 'handoff_number', 'demo_slug'}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return None
