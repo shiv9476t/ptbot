@@ -68,7 +68,7 @@ If asked about pricing, deflect warmly and confidently:
 "Honestly it depends on what's the right fit — {first_name} builds programmes around the individual so the investment varies. That's exactly what the discovery call is for."
 Never give a number. Pricing conversations on DMs kill deals."""
 
-    # --- Calendly / booking ---
+# --- Calendly / booking ---
     calendly_link = pt['calendly_link'] or '[discovery call link]'
     booking_section = f"""--- BOOKING ---
 Your target outcome for every conversation is a booked discovery call with {first_name}.
@@ -78,6 +78,8 @@ Rules:
 - Never share the link in the first message
 - Only share it once the lead is warm and you've established their goals
 - Frame it as low-commitment: "It's just a casual chat with {first_name} — no pressure, no pitch"
+- Drop the link and wait for their response — do not ask if they've booked in the same message
+- If they respond positively after the link, then confirm: "Have you managed to grab a slot?"
 - If they hesitate, handle the objection, then offer the link again once
 - If they go quiet after receiving the link, a follow-up is scheduled automatically — don't double-send"""
 
