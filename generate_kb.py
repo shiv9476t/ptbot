@@ -86,27 +86,46 @@ Your job is to generate their complete knowledge base from the raw source materi
 
 Return a single JSON object (no markdown, no code fences) with exactly these keys:
 
-- "philosophy.txt" — The PT's coaching philosophy in their voice. Cover their backstory, \
-core beliefs, methodology, and what makes them different. 150-250 words.
+- "packages.txt" — Packages and pricing. Cover what's included day-to-day (check-ins, \
+app, programming, nutrition support, etc.), how it works, duration, and what the client \
+actually gets. If specific prices are present in the source material, include them. If \
+pricing is vague or absent, describe the offering and direct people to book a call. \
+This gets pulled when leads ask "what do I actually get?" or "how does it work?" 150-250 words.
 
-- "packages.txt" — Their coaching offer(s). Cover what's included, who it's for, and how \
-to get started. If specific packages or prices aren't clear from the source material, \
-describe the general offering and direct people to book a call. 100-200 words.
+- "philosophy.txt" — The PT's coaching philosophy. How they think about training and \
+nutrition, what they stand against, their core beliefs and what makes them different from \
+generic coaches. Pull strongly from any strong opinions or recurring themes in their \
+captions or website — these are what make the bot sound like this specific PT rather than \
+anyone else. 150-250 words.
 
-- "faqs.txt" — 5-8 Q&A pairs covering the most common objections and questions a prospect \
-would have (cost, time commitment, diet, results timeline, how it works, etc.). Use their \
-voice and philosophy to answer. Format each as "Question?\\nAnswer." separated by a blank line.
+- "results.txt" — Real client outcomes and transformations. Be as specific as possible — \
+numbers, timeframes, and context ("lost 12kg in 16 weeks while still eating curry every \
+day") are infinitely more useful than vague claims. If no client results appear in the \
+source material, use the PT's own transformation story. This gets pulled when nurturing \
+warm leads who need social proof. 150-200 words.
 
-- "results.txt" — Client results and transformations. Include specific numbers and timeframes \
-where available. If no client results appear in the source material, use the PT's own \
-transformation story. 100-150 words.
+- "faqs.txt" — Common operational questions a prospect would ask: how does online coaching \
+work, what app do you use, how often do we check in, do you do face to face, how long \
+until I see results, what happens if I travel or miss a week. These are questions the bot \
+should be able to answer confidently rather than deflect. Format each as "Question?\\nAnswer." \
+separated by a blank line. 6-10 Q&A pairs.
 
-- "discovery_call.txt" — Short doc explaining what the discovery call is, what happens on it, \
-and why someone should book. Low-pressure, warm tone. End with the booking link if one is \
-found, otherwise a placeholder. 80-120 words.
+- "background.txt" — The PT's background and credentials. Qualifications, years of \
+experience, their own fitness journey, why they got into coaching, and what makes them \
+trustworthy. Gets pulled when leads ask "who is this person?" or "why should I trust them?" \
+Write it in the PT's voice, not as a third-person bio. 150-200 words.
+
+- "objections.txt" — Dedicated responses to the most common objections for this PT's niche. \
+Each entry should be a specific objection followed by how this PT would genuinely respond to \
+it — in their voice, using their philosophy and results. Include at least: "I've tried online \
+coaching before and it didn't work", "I can't afford a coach right now", "I don't have time", \
+and any niche-specific objections evident from the source material. These get pulled verbatim \
+during objection handling so they must feel authentic, not generic. Format each as \
+"Objection: [objection]\\nResponse: [response]" separated by a blank line. 4-6 objections.
 
 - "config.json" — A JSON string (it will be parsed separately) containing:
   - "name": PT's full name
+  - "demo_slug": URL-friendly slug, e.g. "arjhan-rai" or "tom-holman"
   - "tone_config": Rich 2-4 sentence description of their voice and communication style. \
 Cover energy level, humour, language patterns, cultural references, what they avoid, and \
 the emotional register they operate in. This is injected verbatim into an AI system prompt \
@@ -120,13 +139,13 @@ Rules:
 - Do NOT invent specific claims (prices, client names, exact results) not present in the \
 source material.
 - Where information is missing, write around it naturally rather than fabricating details.
-- The five .txt files are used as a retrieval knowledge base by an AI chatbot responding to \
-Instagram DMs. Write them to be informative and scannable when retrieved as short chunks, \
-not as website marketing copy.
+- These files are used as a retrieval knowledge base by an AI chatbot responding to Instagram \
+DMs. Write them to be informative and scannable when retrieved as short chunks, not as \
+website marketing copy.
 - Return only valid JSON. No preamble, no explanation, no markdown fences.
 """
 
-_KB_FILES = ["philosophy.txt", "packages.txt", "faqs.txt", "results.txt", "discovery_call.txt"]
+_KB_FILES = ["packages.txt", "philosophy.txt", "results.txt", "faqs.txt", "background.txt", "objections.txt"]
 
 
 # ---------------------------------------------------------------------------
