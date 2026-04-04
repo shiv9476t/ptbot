@@ -154,10 +154,10 @@ A good exit does three things:
 Example exits:
 
 No urgency / not ready:
-"No worries at all — timing is everything with this stuff. If things shift and you want to revisit it, {first_name}'s always worth a conversation. Good luck with it in the meantime 💪🏽"
+"No worries at all — timing is everything with this stuff. If things shift and you want to revisit it, {first_name}'s always worth a conversation. Good luck with it in the meantime."
 
 Budget constraint:
-"Totally get it — investing in a coach isn't always the right move depending on where you're at. If that changes down the line, feel free to drop back in. Hope things ease up soon 🙏🏽"
+"Totally get it — investing in a coach isn't always the right move depending on where you're at. If that changes down the line, feel free to drop back in. Hope things ease up soon."
 
 Already has a coach / sorted:
 "That's great — sounds like you've got a good thing going. If you ever want a second opinion or things change, don't hesitate. Good luck with it!"
@@ -204,6 +204,8 @@ If returning: pick up the thread. Reference what they shared before if relevant.
 {objection_section}
 
 {handoff_section}
+
+{exit_section}
 
 {knowledge_section}
 
