@@ -36,6 +36,51 @@ def get_messages_for_contact(contact_id):
     conn.close()
     return [dict(m) for m in messages]
 
+def get_conversations_for_pt(instagram_account_id):
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT
+            c.id AS contact_id,
+            c.sender_id,
+            c.name,
+            c.is_new,
+            c.handed_off,
+            c.created_at AS contact_created_at,
+            m.id AS message_id,
+            m.role,
+            m.content,
+            m.created_at AS message_created_at
+        FROM contacts c
+        JOIN pts p ON c.pt_id = p.id
+        LEFT JOIN messages m ON m.contact_id = c.id
+        WHERE p.instagram_account_id = ?
+        ORDER BY c.id ASC, m.created_at ASC
+    ''', (instagram_account_id,)).fetchall()
+    conn.close()
+
+    contacts = {}
+    for row in rows:
+        cid = row['contact_id']
+        if cid not in contacts:
+            contacts[cid] = {
+                'contact_id': cid,
+                'sender_id': row['sender_id'],
+                'name': row['name'],
+                'is_new': row['is_new'],
+                'handed_off': row['handed_off'],
+                'created_at': row['contact_created_at'],
+                'messages': [],
+            }
+        if row['message_id'] is not None:
+            contacts[cid]['messages'].append({
+                'id': row['message_id'],
+                'role': row['role'],
+                'content': row['content'],
+                'created_at': row['message_created_at'],
+            })
+
+    return list(contacts.values())
+
 def get_last_inbound_timestamp(contact_id):
     """
     Returns the timestamp of the most recent user message.

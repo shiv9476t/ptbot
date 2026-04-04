@@ -4,7 +4,7 @@ from agent import run_agent
 from database.db import init_db, get_db
 from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt, get_pt_by_slug
 from database.contacts import get_all_contacts
-from database.conversations import get_messages_for_contact
+from database.conversations import get_messages_for_contact, get_conversations_for_pt
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
 from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET
 from swap_demo_pt import swap
@@ -130,6 +130,17 @@ def admin_db_contacts():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
         return 'Forbidden', 403
     return jsonify(get_all_contacts()), 200
+
+# Returns all contacts and their full message history for a single PT.
+# Pass ?instagram_account_id=<id>. Works for both real and demo PTs.
+@app.route('/admin/db/conversations', methods=['GET'])
+def admin_db_conversations():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    instagram_account_id = request.args.get('instagram_account_id')
+    if not instagram_account_id:
+        return jsonify({'error': 'instagram_account_id query param required'}), 400
+    return jsonify(get_conversations_for_pt(instagram_account_id)), 200
 
 # Returns the full message history for a single contact. Pass ?contact_id=<id>.
 # Useful for reading an entire conversation thread for a specific lead.
