@@ -78,6 +78,27 @@ def admin_message():
     )
     return jsonify({'reply': reply}), 200
 
+@app.route('/admin/db/chromadb', methods=['GET'])
+def admin_db_chromadb():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    instagram_account_id = request.args.get('instagram_account_id')
+    if not instagram_account_id:
+        return jsonify({'error': 'instagram_account_id query param required'}), 400
+    import chromadb as _chromadb
+    import os as _os
+    chroma = _chromadb.PersistentClient(path=_os.path.join(_os.getenv('DATA_DIR', '.'), 'chromadb_store'))
+    try:
+        collection = chroma.get_collection(name=instagram_account_id)
+    except Exception:
+        return jsonify({'error': f'No collection found for {instagram_account_id}'}), 404
+    results = collection.get()
+    chunks = [
+        {'id': doc_id, 'text': text}
+        for doc_id, text in zip(results['ids'], results['documents'])
+    ]
+    return jsonify({'instagram_account_id': instagram_account_id, 'count': len(chunks), 'chunks': chunks}), 200
+
 @app.route('/admin/db/pts', methods=['GET'])
 def admin_db_pts():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
