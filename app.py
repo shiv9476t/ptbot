@@ -14,10 +14,16 @@ app = Flask(__name__)
 
 init_db()
 
+# Railway hits this every few seconds to confirm the server process is alive.
+# Returns a plain 200 with no logic — intentionally simple so it never fails
+# due to a database or external service issue.
 @app.route('/health', methods=['GET'])
 def health():
     return 'OK', 200
 
+# Step 1 of Meta's webhook setup. When you register a webhook URL in the Meta
+# developer dashboard, Meta sends a one-time GET with a challenge value to prove
+# you own the server. We confirm by echoing the challenge back.
 @app.route('/instagram', methods=['GET'])
 def instagram_verify():
     mode, token, challenge = verify_webhook(request)
@@ -25,6 +31,10 @@ def instagram_verify():
         return challenge, 200
     return 'Forbidden', 403
 
+# The live webhook — every Instagram DM sent to any connected PT account arrives
+# here as a POST. We verify the payload is genuinely from Meta, parse out the
+# sender and message, look up which PT owns the receiving account, run the agent
+# to generate a reply, then send it back via the Instagram Graph API.
 @app.route('/instagram', methods=['POST'])
 def instagram_webhook():
     if not verify_signature(request):
@@ -61,6 +71,9 @@ def instagram_webhook():
 
     return 'OK', 200
 
+# Admin utility for testing the agent directly without going through Instagram.
+# Useful for simulating a conversation as a specific sender, or for debugging
+# a PT's prompt and knowledge base. Protected by ADMIN_SECRET.
 @app.route('/admin/message', methods=['POST'])
 def admin_message():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -78,6 +91,9 @@ def admin_message():
     )
     return jsonify({'reply': reply}), 200
 
+# Lets you inspect the raw chunks stored in a PT's ChromaDB collection — useful
+# for verifying embeddings were created correctly after onboarding a PT.
+# Pass ?instagram_account_id=<id> as a query parameter.
 @app.route('/admin/db/chromadb', methods=['GET'])
 def admin_db_chromadb():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -99,18 +115,24 @@ def admin_db_chromadb():
     ]
     return jsonify({'instagram_account_id': instagram_account_id, 'count': len(chunks), 'chunks': chunks}), 200
 
+# Returns all PT records from the database. Useful for checking which PTs are
+# onboarded and inspecting their config (token, tone, price mode, etc.).
 @app.route('/admin/db/pts', methods=['GET'])
 def admin_db_pts():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
         return 'Forbidden', 403
     return jsonify(get_all_pts()), 200
 
+# Returns all contacts (leads) across all PTs. Each contact represents a unique
+# Instagram user who has DMed a PT at least once.
 @app.route('/admin/db/contacts', methods=['GET'])
 def admin_db_contacts():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
         return 'Forbidden', 403
     return jsonify(get_all_contacts()), 200
 
+# Returns the full message history for a single contact. Pass ?contact_id=<id>.
+# Useful for reading an entire conversation thread for a specific lead.
 @app.route('/admin/db/messages', methods=['GET'])
 def admin_db_messages():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -120,6 +142,9 @@ def admin_db_messages():
         return jsonify({'error': 'contact_id query param required'}), 400
     return jsonify(get_messages_for_contact(contact_id)), 200
 
+# Updates fields on a PT record (e.g. tone_config, calendly_link, price_mode).
+# The instagram_account_id in the request body identifies which PT to update;
+# all other fields in the body are treated as the values to change.
 @app.route('/admin/pt/update', methods=['POST'])
 def admin_pt_update():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -133,6 +158,9 @@ def admin_pt_update():
         return jsonify({'error': 'PT not found or no valid fields provided'}), 404
     return jsonify(updated), 200
 
+# Replaces the demo PT on the shared shiv.trains Instagram account. Deletes the
+# existing PT record and ChromaDB collection for that account, then inserts the
+# new PT from the given folder. Used to switch which PT is being demoed live.
 @app.route('/admin/swap', methods=['POST'])
 def admin_swap():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -146,6 +174,9 @@ def admin_swap():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Adds a new demo PT without touching any existing records. Inserts a PT row
+# with a fake instagram_account_id (demo_<slug>) and embeds their docs into
+# ChromaDB so the demo chat page at /demo/<slug> works.
 @app.route('/admin/demo/add', methods=['POST'])
 def admin_demo_add():
     if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
@@ -161,6 +192,10 @@ def admin_demo_add():
 
 OAUTH_REDIRECT_URI = 'https://web-production-21bb5.up.railway.app/auth/callback'
 
+# OAuth callback for PT onboarding. After a PT authorises PTBot via the Meta
+# OAuth flow, Instagram redirects them here with a short-lived code. We exchange
+# that code for a long-lived access token, fetch their Instagram account ID, and
+# create a new PT record in the database so the bot can start handling their DMs.
 @app.route('/auth/callback', methods=['GET'])
 def auth_callback():
     code = request.args.get('code')
@@ -211,6 +246,10 @@ def auth_callback():
 <p>Your Instagram account has been successfully connected to PTBot.</p>
 </body></html>''', 200
 
+# Serves the public-facing demo chat UI for a PT identified by their slug.
+# Renders a self-contained Instagram-style dark-theme page — no login required.
+# The page stores a random sender_id in localStorage so each browser session
+# looks like a distinct lead to the agent.
 @app.route('/demo/<slug>', methods=['GET'])
 def demo_page(slug):
     import json as _json
@@ -534,6 +573,9 @@ input.addEventListener('keydown', function(e) {{
     return html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 
+# The backend endpoint the demo page calls when a user sends a message.
+# No auth required — intentionally public so the demo works without a token.
+# Looks up the PT by slug, runs the agent, and returns the reply as JSON.
 @app.route('/demo/<slug>/chat', methods=['POST'])
 def demo_chat(slug):
     pt = get_pt_by_slug(slug)
