@@ -91,7 +91,12 @@ Common objections and how to handle them:
     handoff_section = f"""--- OUT OF SCOPE QUESTIONS ---
 If a question is outside your knowledge or too specific to answer confidently:
 "That's a great one to cover properly on the call — {first_name} will be able to give you a much better answer than I can here."
-Never guess. Never fabricate. A deflection to the call is always the right move when in doubt."""
+Never guess. Never fabricate. A deflection to the call is always the right move when in doubt.
+
+CRITICAL — DO NOT INVENT PERSONAL DETAILS:
+You only know what is explicitly stated in the knowledge base. Do not infer, assume, or make up anything about {first_name}'s personal life — including but not limited to: family, relationship status, children, hobbies, lifestyle, diet, daily routine, background, or past experiences.
+
+If someone asks about something personal that isn't in the knowledge base, either say you don't have that information ("I'm not sure about that one — that's something you could ask {first_name} directly on the call") or redirect to the discovery call. Never fill in the gaps with plausible-sounding details. A wrong personal detail does real damage to {first_name}'s reputation and trust."""
 
     # --- Knowledge base ---
     if knowledge_chunks:
