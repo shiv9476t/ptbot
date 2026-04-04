@@ -80,6 +80,72 @@ def _chunk_text(text, chunk_size=500, overlap=50):
     return chunks
 
 
+def update(pt_folder):
+    config_path = os.path.join(pt_folder, 'config.json')
+
+    if not os.path.isdir(pt_folder):
+        raise ValueError(f"'{pt_folder}' is not a directory.")
+    if not os.path.exists(config_path):
+        raise ValueError(f"No config.json found in '{pt_folder}'.")
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
+    slug = config.get('demo_slug')
+    if not slug:
+        raise ValueError("config.json must contain a 'demo_slug' field.")
+
+    account_id = f'demo_{slug}'
+
+    init_db()
+    conn = get_db()
+
+    pt = conn.execute(
+        'SELECT id FROM pts WHERE instagram_account_id = ? AND demo_slug = ?',
+        (account_id, slug)
+    ).fetchone()
+    if not pt:
+        conn.close()
+        raise ValueError(
+            f"No demo PT found with instagram_account_id='{account_id}'. "
+            f"Use add_demo_pt.py to create it first."
+        )
+
+    required = {'name', 'demo_slug', 'tone_config', 'price_mode', 'calendly_link', 'handoff_number'}
+    missing = required - config.keys()
+    if missing:
+        raise ValueError(f"config.json is missing keys: {', '.join(missing)}")
+
+    try:
+        conn.execute('''
+            UPDATE pts SET name = ?, tone_config = ?, price_mode = ?,
+                           calendly_link = ?, handoff_number = ?
+            WHERE instagram_account_id = ?
+        ''', (
+            config['name'],
+            config['tone_config'],
+            config['price_mode'],
+            config['calendly_link'],
+            config['handoff_number'],
+            account_id,
+        ))
+        conn.commit()
+        print(f"Updated PT record for '{config['name']}'.")
+    finally:
+        conn.close()
+
+    # Re-embed: delete existing collection and re-create from current docs
+    chroma = chromadb.PersistentClient(path=os.path.join(DATA_DIR, 'chromadb_store'))
+    try:
+        chroma.delete_collection(name=account_id)
+        print(f"Deleted existing ChromaDB collection '{account_id}'.")
+    except Exception:
+        print(f"No existing ChromaDB collection for '{account_id}', skipping delete.")
+
+    embed_documents(account_id, pt_folder)
+    print(f"\nDone. Demo PT '{config['name']}' updated at /demo/{slug}")
+
+
 def add(pt_folder):
     config_path = os.path.join(pt_folder, 'config.json')
 

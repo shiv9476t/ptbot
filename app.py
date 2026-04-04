@@ -8,7 +8,7 @@ from database.conversations import get_messages_for_contact, get_conversations_f
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
 from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET
 from swap_demo_pt import swap
-from add_demo_pt import add as add_demo_pt
+from add_demo_pt import add as add_demo_pt, update as update_demo_pt
 
 app = Flask(__name__)
 
@@ -181,6 +181,22 @@ def admin_swap():
         return jsonify({'error': 'pt_folder required'}), 400
     try:
         swap(body['pt_folder'])
+        return jsonify({'ok': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Updates an existing demo PT's config and knowledge base. Reads config.json
+# for updated fields, wipes and re-embeds the ChromaDB collection with the
+# current docs, and leaves conversation history untouched.
+@app.route('/admin/demo/update', methods=['POST'])
+def admin_demo_update():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or 'pt_folder' not in body:
+        return jsonify({'error': 'pt_folder required'}), 400
+    try:
+        update_demo_pt(body['pt_folder'])
         return jsonify({'ok': True}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
