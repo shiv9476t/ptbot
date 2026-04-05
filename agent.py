@@ -35,13 +35,17 @@ def run_agent(pt, sender_id, message_text):
     )
     print(f"Tone config: {pt['tone_config'][:100]}")
 
-    # Step 7 - call the Anthropic API -
-    response = client.messages.create(
-        model='claude-sonnet-4-20250514',
-        max_tokens=1000,
-        system=system_prompt,
-        messages=messages
-    )
+    # Step 7 - call the Anthropic API
+    try:
+        response = client.messages.create(
+            model='claude-sonnet-4-20250514',
+            max_tokens=1000,
+            system=system_prompt,
+            messages=messages
+        )
+    except Exception as e:
+        print(f"Claude API error for sender {sender_id}: {e}")
+        return None
 
     reply = response.content[0].text
 

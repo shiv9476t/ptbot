@@ -67,6 +67,10 @@ def instagram_webhook():
         message_text=parsed['message_text']
     )
 
+    if reply is None:
+        print(f"Agent returned no reply for sender {parsed['sender_id']}, skipping send.")
+        return 'OK', 200
+
     send_reply(
         sender_id=parsed['sender_id'],
         reply_text=reply,
@@ -665,6 +669,8 @@ def demo_chat(slug):
         sender_id=body['sender_id'],
         message_text=body['message']
     )
+    if reply is None:
+        return jsonify({'error': 'Agent failed to generate a reply'}), 500
     return jsonify({'reply': reply}), 200
 
 
