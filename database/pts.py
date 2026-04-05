@@ -1,3 +1,4 @@
+import json
 from database.db import get_db
 
 def get_pt_by_instagram_id(instagram_account_id):
@@ -37,6 +38,57 @@ def get_pt_by_slug(slug):
     ).fetchone()
     conn.close()
     return pt
+
+def is_sender_blocked(instagram_account_id, sender_id):
+    conn = get_db()
+    row = conn.execute(
+        'SELECT blocked_senders FROM pts WHERE instagram_account_id = ?',
+        (instagram_account_id,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return False
+    blocked = json.loads(row['blocked_senders'] or '[]')
+    return sender_id in blocked
+
+def block_sender(instagram_account_id, sender_id):
+    conn = get_db()
+    row = conn.execute(
+        'SELECT blocked_senders FROM pts WHERE instagram_account_id = ?',
+        (instagram_account_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return False
+    blocked = json.loads(row['blocked_senders'] or '[]')
+    if sender_id not in blocked:
+        blocked.append(sender_id)
+        conn.execute(
+            'UPDATE pts SET blocked_senders = ? WHERE instagram_account_id = ?',
+            (json.dumps(blocked), instagram_account_id)
+        )
+        conn.commit()
+    conn.close()
+    return True
+
+def unblock_sender(instagram_account_id, sender_id):
+    conn = get_db()
+    row = conn.execute(
+        'SELECT blocked_senders FROM pts WHERE instagram_account_id = ?',
+        (instagram_account_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return False
+    blocked = json.loads(row['blocked_senders'] or '[]')
+    blocked = [s for s in blocked if s != sender_id]
+    conn.execute(
+        'UPDATE pts SET blocked_senders = ? WHERE instagram_account_id = ?',
+        (json.dumps(blocked), instagram_account_id)
+    )
+    conn.commit()
+    conn.close()
+    return True
 
 def update_pt(instagram_account_id, fields):
     allowed = {'name', 'tone_config', 'calendly_link', 'price_mode', 'handoff_number', 'demo_slug'}

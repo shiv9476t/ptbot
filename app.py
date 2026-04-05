@@ -2,7 +2,7 @@ import requests
 from flask import Flask, request, jsonify
 from agent import run_agent
 from database.db import init_db, get_db
-from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt, get_pt_by_slug
+from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt, get_pt_by_slug, is_sender_blocked, block_sender, unblock_sender
 from database.contacts import get_all_contacts
 from database.conversations import get_messages_for_contact, get_conversations_for_pt
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
@@ -56,6 +56,9 @@ def instagram_webhook():
         return 'OK', 200
 
     pt = dict(pt)
+
+    if is_sender_blocked(pt['instagram_account_id'], parsed['sender_id']):
+        return 'OK', 200
 
     reply = run_agent(
         pt=pt,
@@ -168,6 +171,33 @@ def admin_pt_update():
     if updated is None:
         return jsonify({'error': 'PT not found or no valid fields provided'}), 404
     return jsonify(updated), 200
+
+# Adds a sender_id to a PT's blocked list. The agent will silently ignore
+# any future messages from that sender.
+@app.route('/admin/pt/block', methods=['POST'])
+def admin_pt_block():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or not body.get('instagram_account_id') or not body.get('sender_id'):
+        return jsonify({'error': 'instagram_account_id and sender_id required'}), 400
+    found = block_sender(body['instagram_account_id'], body['sender_id'])
+    if not found:
+        return jsonify({'error': 'PT not found'}), 404
+    return jsonify({'ok': True}), 200
+
+# Removes a sender_id from a PT's blocked list.
+@app.route('/admin/pt/unblock', methods=['POST'])
+def admin_pt_unblock():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or not body.get('instagram_account_id') or not body.get('sender_id'):
+        return jsonify({'error': 'instagram_account_id and sender_id required'}), 400
+    found = unblock_sender(body['instagram_account_id'], body['sender_id'])
+    if not found:
+        return jsonify({'error': 'PT not found'}), 404
+    return jsonify({'ok': True}), 200
 
 # Replaces the demo PT on the shared shiv.trains Instagram account. Deletes the
 # existing PT record and ChromaDB collection for that account, then inserts the
@@ -611,6 +641,8 @@ def demo_chat(slug):
     body = request.get_json()
     if not body or not body.get('sender_id') or not body.get('message'):
         return jsonify({'error': 'sender_id and message are required'}), 400
+    if is_sender_blocked(pt['instagram_account_id'], body['sender_id']):
+        return jsonify({'error': 'Sender is blocked'}), 403
     reply = run_agent(
         pt=dict(pt),
         sender_id=body['sender_id'],
