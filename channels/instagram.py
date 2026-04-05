@@ -53,11 +53,14 @@ def parse_message(payload):
         return None
 
 def send_reply(sender_id, reply_text, instagram_token):
-    # Simulate human typing time — scales with reply length
-#    words = len(reply_text.split())
-#    base_delay = random.uniform(5, 12)
-#    typing_delay = min(words * 0.3, 15)
-#    time.sleep(base_delay + typing_delay)
+    # Simulate human typing time — scales with reply length.
+    # Only active when TYPING_DELAY=true (set in production, not staging).
+    import os
+    if os.getenv('TYPING_DELAY', '').lower() == 'true':
+        words = len(reply_text.split())
+        base_delay = random.uniform(5, 12)
+        typing_delay = min(words * 0.3, 15)
+        time.sleep(base_delay + typing_delay)
 
     url = "https://graph.instagram.com/v21.0/me/messages"
 
