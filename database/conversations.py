@@ -81,6 +81,22 @@ def get_conversations_for_pt(instagram_account_id):
 
     return list(contacts.values())
 
+def is_rate_limited(contact_id, limit=3, window_seconds=60):
+    """
+    Returns True if the sender has sent more than `limit` messages
+    within the last `window_seconds`. Prevents Claude API spam from
+    leads who send many messages in quick succession.
+    """
+    conn = get_db()
+    row = conn.execute('''
+        SELECT COUNT(*) as count FROM messages
+        WHERE contact_id = ?
+        AND role = 'user'
+        AND created_at >= datetime('now', ? || ' seconds')
+    ''', (contact_id, f'-{window_seconds}')).fetchone()
+    conn.close()
+    return row['count'] >= limit
+
 def get_last_inbound_timestamp(contact_id):
     """
     Returns the timestamp of the most recent user message.

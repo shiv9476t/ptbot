@@ -1,7 +1,7 @@
 import anthropic
 from config import ANTHROPIC_API_KEY
 from database.contacts import get_or_create_contact
-from database.conversations import save_message, get_conversation_history
+from database.conversations import save_message, get_conversation_history, is_rate_limited
 from prompt import build_system_prompt
 from knowledge import search_knowledge
 
@@ -15,19 +15,24 @@ def run_agent(pt, sender_id, message_text):
         channel='instagram'
     )
 
-    # Step 2 - load conversation history
+    # Step 2 - check rate limit before doing anything else
+    if is_rate_limited(contact_id):
+        print(f"Rate limit hit for sender {sender_id}, skipping.")
+        return None
+
+    # Step 3 - load conversation history
     history = get_conversation_history(contact_id)
 
-    # Step 3 - save the incoming message
+    # Step 4 - save the incoming message
     save_message(contact_id, 'user', message_text)
 
-    # Step 4 - build messages list for Claude
+    # Step 5 - build messages list for Claude
     messages = history + [{'role': 'user', 'content': message_text}]
 
-    # Step 5 - search knowledge base for relevant chunks
+    # Step 6 - search knowledge base for relevant chunks
     knowledge_chunks = search_knowledge(pt['instagram_account_id'], message_text)
 
-    # Step 6 - build system prompt
+    # Step 7 - build system prompt
     system_prompt = build_system_prompt(
         pt=pt,
         is_new=is_new,
@@ -35,7 +40,7 @@ def run_agent(pt, sender_id, message_text):
     )
     print(f"Tone config: {pt['tone_config'][:100]}")
 
-    # Step 7 - call the Anthropic API
+    # Step 8 - call the Anthropic API
     try:
         response = client.messages.create(
             model='claude-sonnet-4-20250514',
@@ -49,7 +54,7 @@ def run_agent(pt, sender_id, message_text):
 
     reply = response.content[0].text
 
-    # Step 8 - save Claude's reply
+    # Step 9 - save Claude's reply
     save_message(contact_id, 'assistant', reply)
 
     return reply
