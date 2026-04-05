@@ -9,6 +9,7 @@ from channels.instagram import verify_webhook, verify_signature, parse_message, 
 from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET
 from swap_demo_pt import swap
 from add_demo_pt import add as add_demo_pt, update as update_demo_pt
+from setup_pt import setup as setup_pt
 
 app = Flask(__name__)
 
@@ -155,6 +156,22 @@ def admin_db_messages():
     if not contact_id:
         return jsonify({'error': 'contact_id query param required'}), 400
     return jsonify(get_messages_for_contact(contact_id)), 200
+
+# Completes onboarding for a real PT after OAuth. Takes the bare record created
+# by /auth/callback, updates it with fields from config.json, and embeds their
+# docs into ChromaDB so the bot can start handling their DMs.
+@app.route('/admin/pt/setup', methods=['POST'])
+def admin_pt_setup():
+    if request.headers.get('Authorization') != f'Bearer {ADMIN_SECRET}':
+        return 'Forbidden', 403
+    body = request.get_json()
+    if not body or not body.get('pt_folder') or not body.get('instagram_account_id'):
+        return jsonify({'error': 'pt_folder and instagram_account_id required'}), 400
+    try:
+        setup_pt(body['pt_folder'], body['instagram_account_id'])
+        return jsonify({'ok': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Updates fields on a PT record (e.g. tone_config, calendly_link, price_mode).
 # The instagram_account_id in the request body identifies which PT to update;
