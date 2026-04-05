@@ -97,6 +97,8 @@ def admin_message():
         sender_id=body['sender_id'],
         message_text=body['message']
     )
+    if reply is None:
+        return jsonify({'error': 'Agent failed to generate a reply'}), 500
     return jsonify({'reply': reply}), 200
 
 # Lets you inspect the raw chunks stored in a PT's ChromaDB collection — useful
