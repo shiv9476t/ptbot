@@ -4,7 +4,7 @@ from agent import run_agent
 from database.db import init_db, get_db
 from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt, get_pt_by_slug, is_sender_blocked, block_sender, unblock_sender
 from database.contacts import get_all_contacts
-from database.conversations import get_messages_for_contact, get_conversations_for_pt
+from database.conversations import get_messages_for_contact, get_conversations_for_pt, is_rate_limited
 from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
 from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET
 from swap_demo_pt import swap
@@ -59,6 +59,10 @@ def instagram_webhook():
     pt = dict(pt)
 
     if is_sender_blocked(pt['instagram_account_id'], parsed['sender_id']):
+        return 'OK', 200
+
+    if is_rate_limited(pt['id'], parsed['sender_id']):
+        print(f"Rate limit hit for sender {parsed['sender_id']}, skipping.")
         return 'OK', 200
 
     reply = run_agent(
