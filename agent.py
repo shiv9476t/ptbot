@@ -65,9 +65,7 @@ def run_agent(pt, sender_id, message_text):
 
     # Step 7 - load photos and conditionally include the tool
     photos = load_photos(pt['pt_folder']) if pt.get('pt_folder') else []
-    print(f"Photos loaded: {len(photos)} from pt_folder={pt.get('pt_folder')}")
     tools = [TRANSFORMATION_PHOTO_TOOL] if photos else []
-    print(f"Tools active: {[t['name'] for t in tools]}")
 
     # Step 8 - call the Anthropic API
     try:
