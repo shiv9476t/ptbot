@@ -95,7 +95,8 @@ def run_agent(pt, sender_id, message_text):
                 photo_url = get_photo_url(pt['instagram_account_id'], photo['filename'])
                 tool_result_content = (
                     f"Photo URL: {photo_url}\n"
-                    f"Description: {photo['description']}"
+                    f"Description: {photo['description']}\n"
+                    f"Important: do NOT include the URL in your reply — the photo will be sent automatically as a separate image message."
                 )
             else:
                 tool_result_content = "No matching transformation photo found."
