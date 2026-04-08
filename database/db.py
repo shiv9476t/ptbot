@@ -65,6 +65,12 @@ def init_db():
     except Exception:
         pass  # Column already exists
 
+    # Add pt_folder column if it doesn't exist (safe migration)
+    try:
+        cursor.execute('ALTER TABLE pts ADD COLUMN pt_folder TEXT')
+    except Exception:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
     print("PTBot database initialised.")

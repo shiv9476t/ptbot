@@ -27,7 +27,7 @@ load_dotenv()
 DATA_DIR = os.getenv('DATA_DIR', '.')
 
 
-def insert_pt(conn, config, account_id, slug):
+def insert_pt(conn, config, account_id, slug, pt_folder):
     required = {'name', 'demo_slug', 'tone_config', 'price_mode', 'calendly_link', 'handoff_number'}
     missing = required - config.keys()
     if missing:
@@ -35,8 +35,8 @@ def insert_pt(conn, config, account_id, slug):
 
     conn.execute('''
         INSERT INTO pts (name, instagram_account_id, instagram_token, handoff_number,
-                         tone_config, calendly_link, price_mode, channels, demo_slug)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         tone_config, calendly_link, price_mode, channels, demo_slug, pt_folder)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         config['name'],
         account_id,
@@ -47,6 +47,7 @@ def insert_pt(conn, config, account_id, slug):
         config['price_mode'],
         '["instagram"]',
         slug,
+        pt_folder,
     ))
     print(f"Inserted PT record for '{config['name']}' with demo_slug='{slug}'.")
 
@@ -119,7 +120,7 @@ def update(pt_folder):
     try:
         conn.execute('''
             UPDATE pts SET name = ?, tone_config = ?, price_mode = ?,
-                           calendly_link = ?, handoff_number = ?
+                           calendly_link = ?, handoff_number = ?, pt_folder = ?
             WHERE instagram_account_id = ?
         ''', (
             config['name'],
@@ -127,6 +128,7 @@ def update(pt_folder):
             config['price_mode'],
             config['calendly_link'],
             config['handoff_number'],
+            pt_folder,
             account_id,
         ))
         conn.commit()
@@ -179,7 +181,7 @@ def add(pt_folder):
         )
 
     try:
-        insert_pt(conn, config, account_id, slug)
+        insert_pt(conn, config, account_id, slug, pt_folder)
         conn.commit()
     finally:
         conn.close()

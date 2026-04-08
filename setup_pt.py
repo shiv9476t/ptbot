@@ -91,7 +91,7 @@ def setup(pt_folder, instagram_account_id):
     try:
         conn.execute('''
             UPDATE pts SET name = ?, tone_config = ?, price_mode = ?,
-                           calendly_link = ?, handoff_number = ?
+                           calendly_link = ?, handoff_number = ?, pt_folder = ?
             WHERE instagram_account_id = ?
         ''', (
             config['name'],
@@ -99,6 +99,7 @@ def setup(pt_folder, instagram_account_id):
             config['price_mode'],
             config['calendly_link'],
             config['handoff_number'],
+            pt_folder,
             instagram_account_id,
         ))
         conn.commit()

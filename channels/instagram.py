@@ -52,6 +52,28 @@ def parse_message(payload):
     except (KeyError, IndexError):
         return None
 
+def send_image(sender_id, image_url, instagram_token):
+    url = "https://graph.instagram.com/v21.0/me/messages"
+    headers = {
+        'Authorization': f'Bearer {instagram_token}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'recipient': {'id': sender_id},
+        'message': {
+            'attachment': {
+                'type': 'image',
+                'payload': {'url': image_url, 'is_reusable': True}
+            }
+        }
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code != 200:
+        print(f"Instagram image send error: {response.status_code} {response.text}")
+    else:
+        print(f"Instagram image sent successfully to {sender_id}")
+    return response.status_code
+
 def send_reply(sender_id, reply_text, instagram_token):
     # Simulate human typing time — scales with reply length.
     # Only active when TYPING_DELAY=true (set in production, not staging).

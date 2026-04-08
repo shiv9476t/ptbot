@@ -5,8 +5,9 @@ from database.db import init_db, get_db
 from database.pts import get_pt_by_instagram_id, get_all_pts, update_pt, get_pt_by_slug, is_sender_blocked, block_sender, unblock_sender
 from database.contacts import get_all_contacts
 from database.conversations import get_messages_for_contact, get_conversations_for_pt, is_rate_limited
-from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply
-from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET
+from channels.instagram import verify_webhook, verify_signature, parse_message, send_reply, send_image
+from config import INSTAGRAM_VERIFY_TOKEN, ADMIN_SECRET, META_APP_ID, META_INSTAGRAM_APP_SECRET, BASE_URL
+from photos import load_photos
 from swap_demo_pt import swap
 from add_demo_pt import add as add_demo_pt, update as update_demo_pt
 from setup_pt import setup as setup_pt
@@ -65,7 +66,7 @@ def instagram_webhook():
         print(f"Rate limit hit for sender {parsed['sender_id']}, skipping.")
         return 'OK', 200
 
-    reply = run_agent(
+    reply, photo_url = run_agent(
         pt=pt,
         sender_id=parsed['sender_id'],
         message_text=parsed['message_text']
@@ -80,6 +81,13 @@ def instagram_webhook():
         reply_text=reply,
         instagram_token=pt['instagram_token']
     )
+
+    if photo_url:
+        send_image(
+            sender_id=parsed['sender_id'],
+            image_url=photo_url,
+            instagram_token=pt['instagram_token']
+        )
 
     return 'OK', 200
 
@@ -96,14 +104,14 @@ def admin_message():
     pt = get_pt_by_instagram_id(body['instagram_account_id'])
     if not pt:
         return jsonify({'error': 'PT not found'}), 404
-    reply = run_agent(
+    reply, photo_url = run_agent(
         pt=dict(pt),
         sender_id=body['sender_id'],
         message_text=body['message']
     )
     if reply is None:
         return jsonify({'error': 'Agent failed to generate a reply'}), 500
-    return jsonify({'reply': reply}), 200
+    return jsonify({'reply': reply, 'photo_url': photo_url}), 200
 
 # Lets you inspect the raw chunks stored in a PT's ChromaDB collection — useful
 # for verifying embeddings were created correctly after onboarding a PT.
@@ -329,6 +337,23 @@ def auth_callback():
 <h2>Account connected!</h2>
 <p>Your Instagram account has been successfully connected to PTBot.</p>
 </body></html>''', 200
+
+# Serves transformation photos for a PT. No auth required — the Instagram API
+# needs a publicly accessible URL to send images to leads.
+@app.route('/photos/<account_id>/<filename>', methods=['GET'])
+def serve_photo(account_id, filename):
+    import os as _os
+    pt = get_pt_by_instagram_id(account_id)
+    if not pt or not pt['pt_folder']:
+        return 'Not found', 404
+    photos_dir = _os.path.abspath(_os.path.join(pt['pt_folder'], 'photos'))
+    file_path = _os.path.abspath(_os.path.join(photos_dir, filename))
+    if not file_path.startswith(photos_dir):
+        return 'Forbidden', 403  # block path traversal
+    if not _os.path.isfile(file_path):
+        return 'Not found', 404
+    from flask import send_file
+    return send_file(file_path)
 
 # Serves the public-facing demo chat UI for a PT identified by their slug.
 # Renders a self-contained Instagram-style dark-theme page — no login required.
@@ -581,6 +606,24 @@ function appendBubble(role, text) {{
   msgs.scrollTop = msgs.scrollHeight;
 }}
 
+function appendImageBubble(role, url) {{
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'bubble-row ' + role;
+  if (role === 'pt') {{
+    const av = document.createElement('div');
+    av.className = 'bubble-avatar';
+    av.textContent = initials(PT_NAME);
+    row.appendChild(av);
+  }}
+  const img = document.createElement('img');
+  img.src = url;
+  img.style.cssText = 'max-width:72%;border-radius:16px;display:block;';
+  row.appendChild(img);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}}
+
 function showTyping() {{
   const msgs = document.getElementById('messages');
   const row = document.createElement('div');
@@ -627,6 +670,9 @@ async function sendMessage() {{
     hideTyping();
     if (data.reply) {{
       appendBubble('pt', data.reply);
+      if (data.photo_url) {{
+        appendImageBubble('pt', data.photo_url);
+      }}
     }} else {{
       appendBubble('pt', 'Something went wrong. Please try again.');
     }}
@@ -670,14 +716,14 @@ def demo_chat(slug):
         return jsonify({'error': 'sender_id and message are required'}), 400
     if is_sender_blocked(pt['instagram_account_id'], body['sender_id']):
         return jsonify({'error': 'Sender is blocked'}), 403
-    reply = run_agent(
+    reply, photo_url = run_agent(
         pt=dict(pt),
         sender_id=body['sender_id'],
         message_text=body['message']
     )
     if reply is None:
         return jsonify({'error': 'Agent failed to generate a reply'}), 500
-    return jsonify({'reply': reply}), 200
+    return jsonify({'reply': reply, 'photo_url': photo_url}), 200
 
 
 if __name__ == '__main__':

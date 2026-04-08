@@ -17,3 +17,6 @@ ADMIN_SECRET = os.getenv('ADMIN_SECRET')
 
 # Instagram OAuth app credentials
 META_APP_ID = os.getenv('META_APP_ID')
+
+# Public base URL of this server — used to construct photo URLs for the Instagram API
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:5000')
