@@ -12,9 +12,12 @@ TRANSFORMATION_PHOTO_TOOL = {
     "name": "get_transformation_photo",
     "description": (
         "Retrieve a real client transformation photo to share with the lead. "
-        "Use this when the lead asks for proof of results, expresses doubt about "
-        "whether coaching works, or when showing a real transformation would help "
-        "move them toward booking a call. Only call once per response."
+        "Use this when: the lead asks for proof of results or before/after photos; "
+        "the lead expresses doubt that coaching works or that results are achievable for them; "
+        "the lead describes a struggle or roadblock that matches a client transformation story; "
+        "the lead is close to agreeing to a call but hesitating. "
+        "Do not use early in the conversation before you understand their situation. "
+        "Only call once per response."
     ),
     "input_schema": {
         "type": "object",
